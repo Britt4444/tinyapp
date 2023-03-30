@@ -10,7 +10,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-function generateRandomString() {
+const generateRandomString = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = "";
   for (let i = 0; i < 6; i++) {
@@ -59,5 +59,5 @@ app.post("/urls", (req, res) => {
   //assign shortURL key/value pair to urlDatabase
   urlDatabase[shortURL] = req.body.longURL;
   //redirect to new id path
-  res.redirect(`/urls/${shortURL}`); 
+  res.redirect(`/urls/${shortURL}`);
 });
