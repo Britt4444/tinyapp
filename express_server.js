@@ -54,6 +54,10 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // log post req body to console
-  res.send("Ok"); //respond with ok
+  //create new shortURL
+  const shortURL = generateRandomString();
+  //assign shortURL key/value pair to urlDatabase
+  urlDatabase[shortURL] = req.body.longURL;
+  //redirect to new id path
+  res.redirect(`/urls/${shortURL}`); 
 });
