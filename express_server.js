@@ -40,7 +40,6 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
-  console.log(templateVars);
   res.render("urls_index", templateVars);
 });
 
@@ -60,4 +59,11 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = req.body.longURL;
   //redirect to new id path
   res.redirect(`/urls/${shortURL}`);
+});
+
+app.get("/u/:id", (req, res) => {
+  // define longURL
+  const longURL = urlDatabase[req.params.id];
+  // redirect to longURL page
+  res.redirect(longURL);
 });
