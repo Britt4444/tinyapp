@@ -26,10 +26,6 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
-
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
@@ -52,6 +48,13 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:id", (req, res) => {
+  // define longURL
+  const longURL = urlDatabase[req.params.id];
+  // redirect to longURL page
+  res.redirect(longURL);
+});
+
 app.post("/urls", (req, res) => {
   //create new shortURL
   const shortURL = generateRandomString();
@@ -61,21 +64,19 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-app.get("/u/:id", (req, res) => {
-  // define longURL
-  const longURL = urlDatabase[req.params.id];
-  // redirect to longURL page
-  res.redirect(longURL);
-});
-
 //post method to delete url ids
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
-  res.redirect("/urls");
+  res.redirect('/urls');
 });
 
 //post method to edit urls
-app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.longURL;
+app.post("/urls/:shortURL", (req, res) => {
+  const tinyURL = req.params.shortURL;
+  urlDatabase[tinyURL].longURL = req.body.longURL;
   res.redirect('/urls');
+});
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
