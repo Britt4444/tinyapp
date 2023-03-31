@@ -20,7 +20,7 @@
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>" target="_blank"><%= id %></a>
         </p>
-        <form class="form-inline justify-content-center" action="/urls" method="POST">
+        <form class="form-inline justify-content-center" action="/urls/<%= id %>" method="POST">
           <div class="form-group">
             <label for="longURL">New URL: </label>
             <input

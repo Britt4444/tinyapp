@@ -73,7 +73,9 @@ app.post("/urls/:id/delete", (req, res) => {
 //post method to edit urls
 app.post("/urls/:shortURL", (req, res) => {
   const tinyURL = req.params.shortURL;
-  urlDatabase[tinyURL].longURL = req.body.longURL;
+  //form not updating, adds new url to table?
+  urlDatabase[tinyURL] = req.body.longURL;
+  //redirect not working
   res.redirect('/urls');
 });
 
