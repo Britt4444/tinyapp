@@ -66,11 +66,16 @@ app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   // redirect to longURL page
   res.redirect(longURL);
-  console.log(res.statusCode);
 });
 
 //post method to delete url ids
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
+});
+
+//post method to edit urls
+app.post("/urls/:id", (req, res) => {
+  urlDatabase[req.params.id] = req.body.longURL;
+  res.redirect('/urls');
 });
