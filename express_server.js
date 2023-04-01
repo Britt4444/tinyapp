@@ -73,19 +73,15 @@ app.post("/urls/:id/delete", (req, res) => {
 //post method to edit urls
 app.post("/urls/:shortURL", (req, res) => {
   const tinyURL = req.params.shortURL;
-  //form not updating, adds new url to table?
   urlDatabase[tinyURL] = req.body.longURL;
-  //redirect not working
   res.redirect('/urls');
 });
 
 //post login
 app.post("/login", (req, res) => {
-  //set login name as cookie?
-  // console.log(req.body.login); // undefined?
-  res.cookie = req.body.login;
-  console.log(res.cookie); //undefined
-  res.redirect(`/urls/${res.cookie}`); // /undefined atm
+  const username = req.body.username;
+  res.cookie('username', username);
+  res.redirect('/urls'); 
 })
 
 app.listen(PORT, () => {
