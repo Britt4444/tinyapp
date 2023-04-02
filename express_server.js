@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 //default port
 const PORT = 8080;
 
@@ -9,15 +9,6 @@ app.set("view engine", "ejs");
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
-};
-
-const generateRandomString = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = "";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
 };
 
 //must come before all routes; converts req body from buffer to string, then adds to req.body
@@ -63,6 +54,9 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  if (!isValidUrl(req.body.longURL)) {
+    return res.status(400).end('Please enter a valid URL!');
+  }
   //create new shortURL
   const shortURL = generateRandomString();
   //assign shortURL key/value pair to urlDatabase
@@ -100,3 +94,23 @@ app.post("/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+
+///helper functions
+const generateRandomString = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
+function isValidUrl(string) {
+  let url = '';
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;
+  }
+};
