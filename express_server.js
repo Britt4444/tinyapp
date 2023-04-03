@@ -53,6 +53,12 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
+app.get("/register", (req, res) => {
+  console.log(req.params);
+  const templateVars = { username: req.cookies['username'], email: req.params.email, password: req.params.password };
+  res.render("urls_register", templateVars);
+})
+
 app.post("/urls", (req, res) => {
   if (!isValidUrl(req.body.longURL)) {
     return res.status(400).end('Please enter a valid URL!');
