@@ -42,20 +42,28 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const userID = req.cookies['userID'];
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies['username'],
+    user: users[userID],
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies['username'] };
+  const userID = req.cookies['userID'];
+  const templateVars = { user: users[userID] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies['username']};
+  const userID = req.cookies['userID'];
+  console.log('userID');
+  const templateVars = {
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id],
+    user: users[userID],
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -67,13 +75,14 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  console.log(req.params);
-  const templateVars = { username: req.cookies['username'], email: req.params.email, password: req.params.password };
+  const userID = req.cookies['userID'];
+  const templateVars = { user: users[userID] };
   res.render("urls_register", templateVars);
-})
+  res.redirect("/urls");
+});
 
 app.post("/urls", (req, res) => {
-  if (!isValidUrl(req.body.longURL)) {
+  if (isValidUrl(req.body.longURL) === false) {
     return res.status(400).end('Please enter a valid URL!');
   }
   //create new shortURL
@@ -89,7 +98,6 @@ app.post("/register", (req, res) => {
   const userID = generateRandomString();
   users[userID] = { id: userID, email: req.body.email, password: req.body.password };
   res.cookie('userID', userID);
-  console.log(users);
   res.redirect("/urls");
 });
 
@@ -108,16 +116,18 @@ app.post("/urls/:shortURL", (req, res) => {
 
 //post login
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie('username', username);
+  const email = req.body.email;
+  const password = req.body.password;
+  const userID = returnUserID(email, users);
+  res.cookie('userID', userID);
   res.redirect('/urls');
 });
 
 //post logout
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('userID');
   res.redirect('/urls');
-})
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -140,5 +150,13 @@ function isValidUrl(string) {
     url = new URL(string);
   } catch (_) {
     return false;
+  }
+};
+
+const returnUserID = (email, users) => {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return users[user].id
+    }
   }
 };

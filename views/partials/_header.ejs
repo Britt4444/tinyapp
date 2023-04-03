@@ -16,22 +16,31 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <a class="nav-item nav-link" href="/register">Register User</a>
       </div>
     </div>
-    <% if(username) { %> 
-    <label>Logged in as: <%= username %></label> &nbsp;&nbsp;&nbsp;&nbsp;
+    <% if (user) { %> 
+    <label>Logged in as: <%= user.email %></label> &nbsp;&nbsp;&nbsp;&nbsp;
     <form class="form-inline" action="/logout" method="POST">
       <button type="submit" class="btn btn-primary">Logout</button>
     </form>
     <% } else { %>
     <form class="form-inline" action="/login" method="POST">
       <div class="form-group mb-2">
-        <label for="username"></label>
+        <label for="email"></label>
         <input
           class="form-control"
-          type="text"
-          name="username"
-          placeholder="Username"
+          type="email"
+          name="email"
+          placeholder="example@address.com"
+          style="width: 300px; margin: 1em"
+        />
+        <label for="password"></label>
+        <input
+          class="form-control"
+          type="password"
+          name="password"
+          placeholder="Enter password"
           style="width: 300px; margin: 1em"
         />
         <button type="submit" class="btn btn-primary">Login</button>
