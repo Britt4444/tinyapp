@@ -43,7 +43,7 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.cookies['userID'];
-  const templateVars = { 
+  const templateVars = {
     urls: urlDatabase,
     user: users[userID],
   };
@@ -96,6 +96,12 @@ app.post("/urls", (req, res) => {
 //POST add user
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
+  if (req.body.email === '' || req.body.password === '') {
+    return res.status(400).end('Please enter valid email and password');
+  }
+  if (getUserByEmail(req.body.email, users) !== null) {
+    return res.status(400).end('Email is already registered');
+  }
   users[userID] = { id: userID, email: req.body.email, password: req.body.password };
   res.cookie('userID', userID);
   res.redirect("/urls");
@@ -144,7 +150,7 @@ const generateRandomString = () => {
   return result;
 };
 
-function isValidUrl(string) {
+const isValidUrl = (string) => {
   let url = '';
   try {
     url = new URL(string);
@@ -156,7 +162,16 @@ function isValidUrl(string) {
 const returnUserID = (email, users) => {
   for (const user in users) {
     if (users[user].email === email) {
-      return users[user].id
+      return users[user].id;
     }
   }
+};
+
+const getUserByEmail = (email, users) => {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return users[user];
+    }
+  }
+  return null;
 };
