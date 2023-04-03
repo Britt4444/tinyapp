@@ -11,6 +11,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinsosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 //must come before all routes; converts req body from buffer to string, then adds to req.body
 app.use(express.urlencoded({ extended: true }));
 
@@ -69,6 +82,15 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = req.body.longURL;
   //redirect to new id path
   res.redirect(`/urls/${shortURL}`);
+});
+
+//POST add user
+app.post("/register", (req, res) => {
+  const userID = generateRandomString();
+  users[userID] = { id: userID, email: req.body.email, password: req.body.password };
+  res.cookie('userID', userID);
+  console.log(users);
+  res.redirect("/urls");
 });
 
 //post method to delete url ids
