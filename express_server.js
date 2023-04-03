@@ -93,6 +93,13 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+app.get("/login", (req, res) => {
+  const userID = req.cookies['userID'];
+  const templateVars = { user: users[userID] };
+  res.render("urls_login", templateVars);
+  res.redirect("/urls");
+})
+
 //POST add user
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
