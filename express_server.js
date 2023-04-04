@@ -1,10 +1,10 @@
 const express = require("express");
 const app = express();
 const cookieParser = require('cookie-parser');
-//default port
 const PORT = 8080;
 
-app.set("view engine", "ejs");
+
+//CONSTANTS
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -24,10 +24,14 @@ const users = {
   },
 };
 
-//must come before all routes; converts req body from buffer to string, then adds to req.body
-app.use(express.urlencoded({ extended: true }));
+app.set("view engine", "ejs");
 
+// Middleware
+
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+//GET routes
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -68,9 +72,7 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  // define longURL
   const longURL = urlDatabase[req.params.id];
-  // redirect to longURL page
   res.redirect(longURL);
 });
 
@@ -83,63 +85,62 @@ app.get("/register", (req, res) => {
 
 app.post("/urls", (req, res) => {
   if (isValidUrl(req.body.longURL) === false) {
-    return res.status(400).end('Please enter a valid URL!');
+    return res.status(400).send('Please enter a valid URL!');
   }
-  //create new shortURL
   const shortURL = generateRandomString();
-  //assign shortURL key/value pair to urlDatabase
   urlDatabase[shortURL] = req.body.longURL;
-  //redirect to new id path
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/login", (req, res) => {
+  if (req.cookies['userID']) {
+    res.redirect("/urls");
+  }
   const userID = req.cookies['userID'];
   const templateVars = { user: users[userID] };
   res.render("urls_login", templateVars);
-  res.redirect("/urls");
-})
+});
 
-//POST add user
+// POST routes
+
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
-  if (req.body.email === '' || req.body.password === '') {
-    return res.status(400).end('Please enter valid email and password');
+  if (req.body.email.trim() === '' || req.body.password.trim() === '') {
+    return res.status(400).send('Please enter valid credentials');
   }
   if (getUserByEmail(req.body.email, users) !== null) {
-    return res.status(400).end('Email is already registered');
+    return res.status(400).send('Email is already registered');
   }
   users[userID] = { id: userID, email: req.body.email, password: req.body.password };
   res.cookie('userID', userID);
   res.redirect("/urls");
 });
 
-//post method to delete url ids
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect('/urls');
 });
 
-//post method to edit urls
 app.post("/urls/:shortURL", (req, res) => {
   const tinyURL = req.params.shortURL;
   urlDatabase[tinyURL] = req.body.longURL;
   res.redirect('/urls');
 });
 
-//post login
 app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  const userID = returnUserID(email, users);
-  res.cookie('userID', userID);
-  res.redirect('/urls');
+  const client = getUserByEmail(req.body.email, users);
+  if (client && client.password === req.body.password) { 
+    const userID = returnUserID(req.body.email, users);
+    res.cookie('userID', userID);
+    res.redirect('/urls');
+  } else {
+    return res.status(403).send('Invalid login credentials');
+  }
 });
 
-//post logout
 app.post("/logout", (req, res) => {
   res.clearCookie('userID');
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 app.listen(PORT, () => {
