@@ -8,22 +8,13 @@ const PORT = 8080;
 //CONSTANTS
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
 };
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinsosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-};
+const users = {};
 
 app.set("view engine", "ejs");
 
@@ -48,8 +39,12 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.cookies['userID'];
+  const usersURLs = urlsForUser(userID);
+  if (!userID) {
+    return res.status(401).send('Please log in or register new user');
+  }
   const templateVars = {
-    urls: urlDatabase,
+    urls: usersURLs,
     user: users[userID],
   };
   res.render("urls_index", templateVars);
@@ -66,21 +61,27 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const userID = req.cookies['userID'];
-  console.log('userID');
-  const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
-    user: users[userID],
-  };
-  res.render("urls_show", templateVars);
+  const tinyURL = req.params.id;
+  if (!userID) {
+    return res.status(401).send('Please log in to access this page');
+  }
+  if (urlDatabase[tinyURL]) {
+    const templateVars = {
+      id: tinyURL,
+      longURL: urlDatabase[tinyURL].longURL,
+      urlUserID: urlDatabase[tinyURL].userID, 
+      user: users[userID],
+    };
+    res.render("urls_show", templateVars);
+  }
 });
 
 app.get("/u/:id", (req, res) => {
   const tinyURL = req.params.id;
   if (!urlDatabase[tinyURL]) {
-    return res.status(404).send('TinyURL does not exist');
+    return res.status(404).send('TinyURL does not exist in your database!');
   }
-  const longURL = urlDatabase[tinyURL];
+  const longURL = urlDatabase[tinyURL].longURL;
   res.redirect(longURL);
 });
 
@@ -107,51 +108,79 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const userID = req.cookies['userID'];
+  const longURL = req.body.longURL.trim();
   if (!userID) {
     return res.status(401).send('Must be logged in to create new URLs');
   }
-  if (isValidUrl(req.body.longURL) === false) {
+  if (isValidUrl(longURL) === false) {
     return res.status(400).send('Please enter a valid URL!');
   }
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+  const tinyURL = generateRandomString();
+  urlDatabase[tinyURL] = {
+    longURL: longURL,
+    userID: userID,
+  };
+  res.redirect(`/urls/${tinyURL}`);
 });
 
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
-  if (req.body.email.trim() === '' || req.body.password.trim() === '') {
-    return res.status(400).send('Please enter valid credentials');
+  const email = req.body.email.trim();
+  const password = req.body.password.trim();
+  if (email === '' || password === '') {
+    return res.status(401).send('Please enter valid credentials');
   }
-  if (getUserByEmail(req.body.email, users) !== null) {
-    return res.status(400).send('Email is already registered');
+  if (getUserByEmail(email, users) !== null) {
+    return res.status(401).send('Email is already registered');
   }
-  users[userID] = { id: userID, email: req.body.email, password: req.body.password };
+  users[userID] = { id: userID, email: email, password: password };
   res.cookie('userID', userID);
   res.redirect("/urls");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect('/urls');
+  const userID = req.cookies['userID'];
+  const tinyURL = req.params.id;
+  if (!userID) {
+    return res.status(401).send('Must be logged in to access this feature');
+  } else if (!urlDatabase.hasOwnProperty(tinyURL)) {
+    return res.status(404).send('TinyURL does not exist!');
+  } else if (userID !== urlDatabase[tinyURL].userID) {
+    return res.status(403).send('Request not authorized');
+  } else {
+    delete urlDatabase[tinyURL];
+    res.redirect('/urls');
+  }
 });
 
-app.post("/urls/:shortURL", (req, res) => {
-  const tinyURL = req.params.shortURL;
-  urlDatabase[tinyURL] = req.body.longURL;
-  res.redirect('/urls');
+app.post("/urls/:id", (req, res) => {
+  const userID = req.cookies['userID'];
+  const tinyURL = req.params.id;
+  const longURL = req.body.longURL.trim();
+  if (!userID) {
+    return res.status(401).send('Must be logged in to access this feature');
+  } else if (!urlDatabase.hasOwnProperty(tinyURL)) {
+    return res.status(404).send('TinyURL does not exist!');
+  } else if (userID !== urlDatabase[tinyURL].userID) {
+    return res.status(403).send('Request not authorized');
+  } else {
+    urlDatabase[tinyURL].longURL = longURL;
+    res.redirect('/urls');
+  }
 });
 
 app.post("/login", (req, res) => {
-  const client = getUserByEmail(req.body.email, users);
+  const email = req.body.email.trim();
+  const password = req.body.password.trim();
+  const client = getUserByEmail(email, users);
   if (!client) {
-    return res.status(403).send('User not found!');
-  } else if (client && client.password === req.body.password) { 
-    const userID = returnUserID(req.body.email, users);
+    return res.status(401).send('User not found!');
+  } else if (client && client.password === password) { 
+    const userID = returnUserID(email, users);
     res.cookie('userID', userID);
     res.redirect('/urls');
   } else {
-    return res.status(403).send('Invalid login credentials');
+    return res.status(401).send('Invalid login credentials');
   }
 });
 
@@ -186,7 +215,7 @@ const isValidUrl = (string) => {
   }
 };
 
-const returnUserID = (email, users) => {
+const returnUserID = (email) => {
   for (const user in users) {
     if (users[user].email === email) {
       return users[user].id;
@@ -194,11 +223,21 @@ const returnUserID = (email, users) => {
   }
 };
 
-const getUserByEmail = (email, users) => {
+const getUserByEmail = (email) => {
   for (const user in users) {
     if (users[user].email === email) {
       return users[user];
     }
   }
   return null;
+};
+
+const urlsForUser = (id) => {
+  let usersURLs = {};
+  for (const tinyURL in urlDatabase) {
+    if (urlDatabase[tinyURL].userID === id) {
+      usersURLs[tinyURL] = urlDatabase[tinyURL];
+    }
+  }
+  return usersURLs;
 };
