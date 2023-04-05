@@ -57,6 +57,9 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const userID = req.cookies['userID'];
+  if (!userID) {
+    res.redirect("/login");
+  }
   const templateVars = { user: users[userID] };
   res.render("urls_new", templateVars);
 });
@@ -73,12 +76,19 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const tinyURL = req.params.id;
+  if (!urlDatabase[tinyURL]) {
+    return res.status(404).send('TinyURL does not exist');
+  }
+  const longURL = urlDatabase[tinyURL];
   res.redirect(longURL);
 });
 
 app.get("/register", (req, res) => {
   const userID = req.cookies['userID'];
+  if (req.cookies['userID']) {
+    res.redirect("/urls");
+  }
   const templateVars = { user: users[userID] };
   res.render("urls_register", templateVars);
   res.redirect("/urls");
@@ -96,6 +106,10 @@ app.get("/login", (req, res) => {
 // POST routes
 
 app.post("/urls", (req, res) => {
+  const userID = req.cookies['userID'];
+  if (!userID) {
+    return res.status(401).send('Must be logged in to create new URLs');
+  }
   if (isValidUrl(req.body.longURL) === false) {
     return res.status(400).send('Please enter a valid URL!');
   }
