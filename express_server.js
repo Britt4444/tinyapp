@@ -1,8 +1,9 @@
+// Setup
+
 const express = require("express");
 const app = express();
 const cookieParser = require('cookie-parser');
 const PORT = 8080;
-
 
 //CONSTANTS
 
@@ -83,15 +84,6 @@ app.get("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls", (req, res) => {
-  if (isValidUrl(req.body.longURL) === false) {
-    return res.status(400).send('Please enter a valid URL!');
-  }
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
-});
-
 app.get("/login", (req, res) => {
   if (req.cookies['userID']) {
     res.redirect("/urls");
@@ -102,6 +94,15 @@ app.get("/login", (req, res) => {
 });
 
 // POST routes
+
+app.post("/urls", (req, res) => {
+  if (isValidUrl(req.body.longURL) === false) {
+    return res.status(400).send('Please enter a valid URL!');
+  }
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
+});
 
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
@@ -129,7 +130,9 @@ app.post("/urls/:shortURL", (req, res) => {
 
 app.post("/login", (req, res) => {
   const client = getUserByEmail(req.body.email, users);
-  if (client && client.password === req.body.password) { 
+  if (!client) {
+    return res.status(403).send('User not found!');
+  } else if (client && client.password === req.body.password) { 
     const userID = returnUserID(req.body.email, users);
     res.cookie('userID', userID);
     res.redirect('/urls');
@@ -142,6 +145,8 @@ app.post("/logout", (req, res) => {
   res.clearCookie('userID');
   res.redirect('/login');
 });
+
+// Listen
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
