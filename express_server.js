@@ -1,13 +1,11 @@
-// Setup
-
+// REQUIREMENTS
 const express = require("express");
 const app = express();
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const PORT = 8080;
 
-//CONSTANTS
-
+// DATABASES
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -17,12 +15,23 @@ const urlDatabase = {
 
 const users = {};
 
-app.set("view engine", "ejs");
+const generateRandomString = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
-// Middleware
-
+// MIDDLEWARE
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: [generateRandomString(), generateRandomString()],
+  maxAge: 24 * 60 * 60 * 1000,
+}))
+app.set("view engine", "ejs");
 
 //GET routes
 
@@ -39,7 +48,7 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const userID = req.cookies['userID'];
+  const userID = req.session.userID;
   const usersURLs = urlsForUser(userID);
   if (!userID) {
     return res.status(401).send('Please log in or register new user');
@@ -52,7 +61,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const userID = req.cookies['userID'];
+  const userID = req.session.userID;
   if (!userID) {
     res.redirect("/login");
   }
@@ -61,7 +70,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const userID = req.cookies['userID'];
+  const userID = req.session.userID;
   const tinyURL = req.params.id;
   if (!userID) {
     return res.status(401).send('Please log in to access this page');
@@ -87,8 +96,8 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const userID = req.cookies['userID'];
-  if (req.cookies['userID']) {
+  const userID = req.session.userID;
+  if (userID) {
     res.redirect("/urls");
   }
   const templateVars = { user: users[userID] };
@@ -97,10 +106,10 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies['userID']) {
+  const userID = req.session.userID;
+  if (userID) {
     res.redirect("/urls");
   }
-  const userID = req.cookies['userID'];
   const templateVars = { user: users[userID] };
   res.render("urls_login", templateVars);
 });
@@ -108,7 +117,7 @@ app.get("/login", (req, res) => {
 // POST routes
 
 app.post("/urls", (req, res) => {
-  const userID = req.cookies['userID'];
+  const userID = req.session.userID;
   const longURL = req.body.longURL.trim();
   if (!userID) {
     return res.status(401).send('Must be logged in to create new URLs');
@@ -136,12 +145,12 @@ app.post("/register", (req, res) => {
     return res.status(401).send('Email is already registered');
   }
   users[userID] = { id: userID, email: email, password: hashedPassword };
-  res.cookie('userID', userID);
+  req.session.userID = userID;
   res.redirect("/urls");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const userID = req.cookies['userID'];
+  const userID = req.session.userID;
   const tinyURL = req.params.id;
   if (!userID) {
     return res.status(401).send('Must be logged in to access this feature');
@@ -156,7 +165,7 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  const userID = req.cookies['userID'];
+  const userID = req.session.userID;
   const tinyURL = req.params.id;
   const longURL = req.body.longURL.trim();
   if (!userID) {
@@ -180,7 +189,7 @@ app.post("/login", (req, res) => {
     return res.status(401).send('User not found!');
   } else if (client && bcrypt.compareSync(password, hashedPassword)) { 
     const userID = returnUserID(email, users);
-    res.cookie('userID', userID);
+    req.session.userID = userID;
     res.redirect('/urls');
   } else {
     return res.status(401).send('Invalid login credentials');
@@ -188,7 +197,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('userID');
+  req.session = null;
   res.redirect('/login');
 });
 
@@ -200,14 +209,6 @@ app.listen(PORT, () => {
 
 
 ///helper functions
-const generateRandomString = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = "";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
 
 const isValidUrl = (string) => {
   let url = '';
