@@ -37,6 +37,8 @@ const getUserByEmail = (email, users) => {
 
 const urlsForUser = (userID, urlDatabase) => {
   let usersURLs = {};
+  console.log('userID: ', userID);
+  console.log('urlDatabase', urlDatabase);
   for (const tinyURL in urlDatabase) {
     if (urlDatabase[tinyURL].userID === userID) {
       usersURLs[tinyURL] = urlDatabase[tinyURL];

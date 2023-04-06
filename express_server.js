@@ -35,7 +35,7 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.userID;
-  const usersURLs = urlsForUser(userID, users);
+  const usersURLs = urlsForUser(userID, urlDatabase);
   if (!userID) {
     return res.status(401).send('Please log in or register new user');
   }
@@ -84,11 +84,10 @@ app.get("/u/:id", (req, res) => {
 app.get("/register", (req, res) => {
   const userID = req.session.userID;
   if (userID) {
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
   const templateVars = { user: users[userID] };
   res.render("urls_register", templateVars);
-  res.redirect("/urls");
 });
 
 app.get("/login", (req, res) => {
