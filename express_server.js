@@ -3,26 +3,12 @@ const express = require("express");
 const app = express();
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const { generateRandomString, isValidUrl, returnUserID, getUserByEmail, urlsForUser } = require('./helpers');
 const PORT = 8080;
 
 // DATABASES
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-};
-
+const urlDatabase = {};
 const users = {};
-
-const generateRandomString = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = "";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
 
 // MIDDLEWARE
 app.use(express.urlencoded({ extended: true }));
@@ -49,7 +35,7 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.userID;
-  const usersURLs = urlsForUser(userID);
+  const usersURLs = urlsForUser(userID, users);
   if (!userID) {
     return res.status(401).send('Please log in or register new user');
   }
@@ -108,7 +94,7 @@ app.get("/register", (req, res) => {
 app.get("/login", (req, res) => {
   const userID = req.session.userID;
   if (userID) {
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
   const templateVars = { user: users[userID] };
   res.render("urls_login", templateVars);
@@ -206,42 +192,3 @@ app.post("/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-
-///helper functions
-
-const isValidUrl = (string) => {
-  let url = '';
-  try {
-    url = new URL(string);
-  } catch (_) {
-    return false;
-  }
-};
-
-const returnUserID = (email) => {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return users[user].id;
-    }
-  }
-};
-
-const getUserByEmail = (email) => {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-  return null;
-};
-
-const urlsForUser = (id) => {
-  let usersURLs = {};
-  for (const tinyURL in urlDatabase) {
-    if (urlDatabase[tinyURL].userID === id) {
-      usersURLs[tinyURL] = urlDatabase[tinyURL];
-    }
-  }
-  return usersURLs;
-};
