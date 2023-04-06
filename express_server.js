@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const methodOverride = require('method-override');
 const { generateRandomString, isValidUrl, returnUserID, getUserByEmail, urlsForUser } = require('./helpers');
 const PORT = 8080;
 
@@ -16,7 +17,8 @@ app.use(cookieSession({
   name: 'session',
   keys: [generateRandomString(), generateRandomString()],
   maxAge: 24 * 60 * 60 * 1000,
-}))
+}));
+app.use(methodOverride('_method'));
 app.set("view engine", "ejs");
 
 //GET routes
@@ -134,7 +136,7 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:id/delete", (req, res) => {
+app.delete("/urls/:id", (req, res) => {
   const userID = req.session.userID;
   const tinyURL = req.params.id;
   if (!userID) {
@@ -149,7 +151,7 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
-app.post("/urls/:id", (req, res) => {
+app.put("/urls/:id", (req, res) => {
   const userID = req.session.userID;
   const tinyURL = req.params.id;
   const longURL = req.body.longURL.trim();
