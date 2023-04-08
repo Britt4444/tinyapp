@@ -24,15 +24,11 @@ app.set("view engine", "ejs");
 //GET routes
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+  const userID = req.session.userID;
+  if (userID) {
+    return res.redirect("/urls");
+  }
+  res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
@@ -156,6 +152,9 @@ app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect('/login');
 });
+
+
+// METHOD-OVERRIDE; PUT/DELETE ROUTES
 
 app.put("/urls/:id", (req, res) => {
   const userID = req.session.userID;
