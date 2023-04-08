@@ -67,7 +67,7 @@ app.get("/urls/:id", (req, res) => {
     const templateVars = {
       id: tinyURL,
       longURL: urlDatabase[tinyURL].longURL,
-      urlUserID: urlDatabase[tinyURL].userID, 
+      urlUserID: urlDatabase[tinyURL].userID,
       user: users[userID],
     };
     res.render("urls_show", templateVars);
@@ -136,37 +136,6 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-app.delete("/urls/:id", (req, res) => {
-  const userID = req.session.userID;
-  const tinyURL = req.params.id;
-  if (!userID) {
-    return res.status(401).send('Must be logged in to access this feature');
-  } else if (!urlDatabase.hasOwnProperty(tinyURL)) {
-    return res.status(404).send('TinyURL does not exist!');
-  } else if (userID !== urlDatabase[tinyURL].userID) {
-    return res.status(403).send('Request not authorized');
-  } else {
-    delete urlDatabase[tinyURL];
-    res.redirect('/urls');
-  }
-});
-
-app.put("/urls/:id", (req, res) => {
-  const userID = req.session.userID;
-  const tinyURL = req.params.id;
-  const longURL = req.body.longURL.trim();
-  if (!userID) {
-    return res.status(401).send('Must be logged in to access this feature');
-  } else if (!urlDatabase.hasOwnProperty(tinyURL)) {
-    return res.status(404).send('TinyURL does not exist!');
-  } else if (userID !== urlDatabase[tinyURL].userID) {
-    return res.status(403).send('Request not authorized');
-  } else {
-    urlDatabase[tinyURL].longURL = longURL;
-    res.redirect('/urls');
-  }
-});
-
 app.post("/login", (req, res) => {
   const email = req.body.email.trim();
   const password = req.body.password.trim();
@@ -174,7 +143,7 @@ app.post("/login", (req, res) => {
   const client = getUserByEmail(email, users);
   if (!client) {
     return res.status(401).send('User not found!');
-  } else if (client && bcrypt.compareSync(password, hashedPassword)) { 
+  } else if (client && bcrypt.compareSync(password, hashedPassword)) {
     const userID = returnUserID(email, users);
     req.session.userID = userID;
     res.redirect('/urls');
@@ -186,6 +155,37 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect('/login');
+});
+
+app.put("/urls/:id", (req, res) => {
+  const userID = req.session.userID;
+  const tinyURL = req.params.id;
+  const longURL = req.body.longURL.trim();
+  if (!userID) {
+    return res.status(401).send('Must be logged in to access this feature');
+  } else if (!(Object.prototype.hasOwnProperty.call(urlDatabase, tinyURL))) {
+    return res.status(404).send('TinyURL does not exist!');
+  } else if (userID !== urlDatabase[tinyURL].userID) {
+    return res.status(403).send('Request not authorized');
+  } else {
+    urlDatabase[tinyURL].longURL = longURL;
+    res.redirect('/urls');
+  }
+});
+
+app.delete("/urls/:id", (req, res) => {
+  const userID = req.session.userID;
+  const tinyURL = req.params.id;
+  if (!userID) {
+    return res.status(401).send('Must be logged in to access this feature');
+  } else if ((Object.prototype.hasOwnProperty.call(urlDatabase, tinyURL))) {
+    return res.status(404).send('TinyURL does not exist!');
+  } else if (userID !== urlDatabase[tinyURL].userID) {
+    return res.status(403).send('Request not authorized');
+  } else {
+    delete urlDatabase[tinyURL];
+    res.redirect('/urls');
+  }
 });
 
 // Listen
