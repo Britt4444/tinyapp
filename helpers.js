@@ -15,6 +15,7 @@ const isValidUrl = (string) => {
   } catch (_) {
     return false;
   }
+  return true;
 };
 
 const returnUserID = (email, users) => {
