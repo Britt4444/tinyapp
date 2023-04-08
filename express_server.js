@@ -178,7 +178,7 @@ app.delete("/urls/:id", (req, res) => {
   const tinyURL = req.params.id;
   if (!userID) {
     return res.status(401).send('Must be logged in to access this feature');
-  } else if ((Object.prototype.hasOwnProperty.call(urlDatabase, tinyURL))) {
+  } else if (!(Object.prototype.hasOwnProperty.call(urlDatabase, tinyURL))) {
     return res.status(404).send('TinyURL does not exist!');
   } else if (userID !== urlDatabase[tinyURL].userID) {
     return res.status(403).send('Request not authorized');
