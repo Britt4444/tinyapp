@@ -4,12 +4,12 @@ const app = express();
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const methodOverride = require('method-override');
+
 const { generateRandomString, isValidUrl, returnUserID, getUserByEmail, urlsForUser } = require('./helpers');
+const { urlDatabase, users } = require('./database');
+
 const PORT = 8080;
 
-// DATABASES
-const urlDatabase = {};
-const users = {};
 
 // MIDDLEWARE
 app.use(express.urlencoded({ extended: true }));
@@ -53,13 +53,34 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+//create new tinyURL
+app.post("/urls", (req, res) => {
+  const userID = req.session.userID;
+  const longURL = req.body.longURL.trim();
+  if (!userID) {
+    return res.status(401).send('Must be logged in to create new URLs');
+  }
+  if (isValidUrl(longURL) === false) {
+    return res.status(400).send('Please enter a valid URL!');
+  }
+  const tinyURL = generateRandomString();
+  urlDatabase[tinyURL] = {
+    longURL: longURL,
+    userID: userID,
+  };
+  res.redirect(`/urls/${tinyURL}`);
+});
+
 app.get("/urls/:id", (req, res) => {
   const userID = req.session.userID;
   const tinyURL = req.params.id;
   if (!userID) {
     return res.status(401).send('Please log in to access this page');
-  }
-  if (urlDatabase[tinyURL]) {
+  } else if (!(Object.prototype.hasOwnProperty.call(urlDatabase, tinyURL))) {
+    return res.status(404).send('TinyURL does not exist!');
+  } else if (userID !== urlDatabase[tinyURL].userID) {
+    return res.status(403).send('Request not authorized');
+  } else {
     const templateVars = {
       id: tinyURL,
       longURL: urlDatabase[tinyURL].longURL,
@@ -79,6 +100,8 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
+// AUTHORIZATION ROUTES
+
 app.get("/register", (req, res) => {
   const userID = req.session.userID;
   if (userID) {
@@ -95,25 +118,6 @@ app.get("/login", (req, res) => {
   }
   const templateVars = { user: users[userID] };
   res.render("urls_login", templateVars);
-});
-
-// POST routes
-
-app.post("/urls", (req, res) => {
-  const userID = req.session.userID;
-  const longURL = req.body.longURL.trim();
-  if (!userID) {
-    return res.status(401).send('Must be logged in to create new URLs');
-  }
-  if (isValidUrl(longURL) === false) {
-    return res.status(400).send('Please enter a valid URL!');
-  }
-  const tinyURL = generateRandomString();
-  urlDatabase[tinyURL] = {
-    longURL: longURL,
-    userID: userID,
-  };
-  res.redirect(`/urls/${tinyURL}`);
 });
 
 app.post("/register", (req, res) => {
@@ -135,11 +139,10 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email.trim();
   const password = req.body.password.trim();
-  const hashedPassword = bcrypt.hashSync(password, 10);
   const client = getUserByEmail(email, users);
   if (!client) {
     return res.status(401).send('User not found!');
-  } else if (client && bcrypt.compareSync(password, hashedPassword)) {
+  } else if (client && bcrypt.compareSync(password, client.password)) {
     const userID = returnUserID(email, users);
     req.session.userID = userID;
     res.redirect('/urls');
@@ -152,7 +155,6 @@ app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect('/login');
 });
-
 
 // METHOD-OVERRIDE; PUT/DELETE ROUTES
 
