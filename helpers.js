@@ -9,6 +9,7 @@ const generateRandomString = () => {
   return result;
 };
 
+// checks for a valid URL in a string
 const isValidUrl = (string) => {
   try {
     new URL(string);
@@ -18,6 +19,7 @@ const isValidUrl = (string) => {
   return true;
 };
 
+// returns userID from users database via user email
 const returnUserID = (email, users) => {
   for (const user in users) {
     if (users[user].email === email) {
@@ -26,6 +28,7 @@ const returnUserID = (email, users) => {
   }
 };
 
+// returns users database for individual user via email
 const getUserByEmail = (email, users) => {
   for (const user in users) {
     if (users[user].email === email) {
@@ -35,6 +38,7 @@ const getUserByEmail = (email, users) => {
   return null;
 };
 
+// returns users database for individual user via userID
 const urlsForUser = (userID, urlDatabase) => {
   let usersURLs = {};
   for (const tinyURL in urlDatabase) {

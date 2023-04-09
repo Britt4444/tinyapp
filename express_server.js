@@ -1,13 +1,16 @@
 // REQUIREMENTS
 const express = require("express");
 const app = express();
+
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+
 const methodOverride = require('method-override');
 
 const { generateRandomString, isValidUrl, returnUserID, getUserByEmail, urlsForUser } = require('./helpers');
 const { urlDatabase, users } = require('./database');
 
+//PORT
 const PORT = 8080;
 
 
@@ -31,6 +34,7 @@ app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
+//render My URLs page
 app.get("/urls", (req, res) => {
   const userID = req.session.userID;
   const usersURLs = urlsForUser(userID, urlDatabase);
@@ -44,6 +48,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// Render Create New URLs page
 app.get("/urls/new", (req, res) => {
   const userID = req.session.userID;
   if (!userID) {
@@ -53,7 +58,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-//create new tinyURL
+// POST request to generate new TinyURL and add to urlDatabase
 app.post("/urls", (req, res) => {
   const userID = req.session.userID;
   const longURL = req.body.longURL.trim();
@@ -71,6 +76,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${tinyURL}`);
 });
 
+// render urls_show to display TinyURL card if TinyURL exists and was created by user
 app.get("/urls/:id", (req, res) => {
   const userID = req.session.userID;
   const tinyURL = req.params.id;
@@ -91,6 +97,7 @@ app.get("/urls/:id", (req, res) => {
   }
 });
 
+// redirect to longURL page if TinyURL was created by user
 app.get("/u/:id", (req, res) => {
   const tinyURL = req.params.id;
   if (!urlDatabase[tinyURL]) {
@@ -102,6 +109,7 @@ app.get("/u/:id", (req, res) => {
 
 // AUTHORIZATION ROUTES
 
+// Render registration page
 app.get("/register", (req, res) => {
   const userID = req.session.userID;
   if (userID) {
@@ -111,6 +119,7 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+// Render login page
 app.get("/login", (req, res) => {
   const userID = req.session.userID;
   if (userID) {
@@ -120,6 +129,7 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+// register new user and assign to users database, storing hashed password
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const email = req.body.email.trim();
@@ -136,6 +146,7 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
+// compare login info to registration information stored in users database
 app.post("/login", (req, res) => {
   const email = req.body.email.trim();
   const password = req.body.password.trim();
@@ -151,6 +162,7 @@ app.post("/login", (req, res) => {
   }
 });
 
+// logout and clear cookie session
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect('/login');
@@ -158,6 +170,7 @@ app.post("/logout", (req, res) => {
 
 // METHOD-OVERRIDE; PUT/DELETE ROUTES
 
+// PUT request to edit longURL associated with TinyURL if it exists in urlDatabase and is owned by user
 app.put("/urls/:id", (req, res) => {
   const userID = req.session.userID;
   const tinyURL = req.params.id;
@@ -174,6 +187,7 @@ app.put("/urls/:id", (req, res) => {
   }
 });
 
+// DELETE request to remove TinyURL from urlDatabase if it exists and is owned by user
 app.delete("/urls/:id", (req, res) => {
   const userID = req.session.userID;
   const tinyURL = req.params.id;
